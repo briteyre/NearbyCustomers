@@ -8,6 +8,7 @@ namespace CoreCodeCamp.Tests.Unit;
 public class CampServiceTests
 {
     private readonly Mock<ILogger<CampService>> _mockLogger = new();
+    private const string NonExistent = "NONEXISTENT";
 
     private CampService CreateService(Mock<ICampRepository> mockRepo)
     {
@@ -143,7 +144,7 @@ public class CampServiceTests
     {
         // Arrange
         var mockRepo = new Mock<ICampRepository>();
-        mockRepo.Setup(r => r.GetCampAsync("NONEXISTENT", false)).ReturnsAsync((Camp?)null);
+        mockRepo.Setup(r => r.GetCampAsync(NonExistent, false)).ReturnsAsync((Camp?)null);
 
         var service = CreateService(mockRepo);
 
@@ -155,12 +156,12 @@ public class CampServiceTests
         };
 
         // Act
-        var result = await service.UpdateCampAsync("NONEXISTENT", request);
+        var result = await service.UpdateCampAsync(NonExistent, request);
 
         // Assert
         result.Should().BeFalse();
 
-        mockRepo.Verify(r => r.GetCampAsync("NONEXISTENT", false), Times.Once);
+        mockRepo.Verify(r => r.GetCampAsync(NonExistent, false), Times.Once);
         mockRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
@@ -217,17 +218,17 @@ public class CampServiceTests
     {
         // Arrange
         var mockRepo = new Mock<ICampRepository>();
-        mockRepo.Setup(r => r.GetCampAsync("NONEXISTENT", false)).ReturnsAsync((Camp?)null);
+        mockRepo.Setup(r => r.GetCampAsync(NonExistent, false)).ReturnsAsync((Camp?)null);
 
         var service = CreateService(mockRepo);
 
         // Act
-        var result = await service.GetCampAsync("NONEXISTENT");
+        var result = await service.GetCampAsync(NonExistent);
 
         // Assert
         result.Should().BeNull();
 
-        mockRepo.Verify(r => r.GetCampAsync("NONEXISTENT", false), Times.Once);
+        mockRepo.Verify(r => r.GetCampAsync(NonExistent, false), Times.Once);
     }
 
 
