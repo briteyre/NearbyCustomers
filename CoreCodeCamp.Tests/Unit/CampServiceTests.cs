@@ -8,7 +8,7 @@ namespace CoreCodeCamp.Tests.Unit;
 public class CampServiceTests
 {
     private readonly Mock<ILogger<CampService>> _mockLogger = new();
-    private const string NonExistent = "NONEXISTENT";
+    private const string NonExistentMoniker = "NONEXISTENT";
 
     private CampService CreateService(Mock<ICampRepository> mockRepo)
     {
@@ -144,7 +144,7 @@ public class CampServiceTests
     {
         // Arrange
         var mockRepo = new Mock<ICampRepository>();
-        mockRepo.Setup(r => r.GetCampAsync(NonExistent, false)).ReturnsAsync((Camp?)null);
+        mockRepo.Setup(r => r.GetCampAsync(NonExistentMoniker, false)).ReturnsAsync((Camp?)null);
 
         var service = CreateService(mockRepo);
 
@@ -156,12 +156,12 @@ public class CampServiceTests
         };
 
         // Act
-        var result = await service.UpdateCampAsync(NonExistent, request);
+        var result = await service.UpdateCampAsync(NonExistentMoniker, request);
 
         // Assert
         result.Should().BeFalse();
 
-        mockRepo.Verify(r => r.GetCampAsync(NonExistent, false), Times.Once);
+        mockRepo.Verify(r => r.GetCampAsync(NonExistentMoniker, false), Times.Once);
         mockRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
