@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "rbs3uDDFv40=",
+  "success": false,
+  "projectFilePath": "C:\\Users\\sally\\source\\repos\\NearbyCustomers\\CoreCodeCamp.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1010",
+      "level": "Error",
+      "message": "The following PackageReference items do not define a corresponding PackageVersion item: Microsoft.SemanticKernel, Aspire.Microsoft.EntityFrameworkCore.SqlServer, FluentValidation.AspNetCore, Meziantou.Analyzer, Microsoft.EntityFrameworkCore.SqlServer, Microsoft.VisualStudio.Threading.Analyzers, Roslynator.Analyzers, Microsoft.Identity.Web, Riok.Mapperly, Swashbuckle.AspNetCore, Microsoft.EntityFrameworkCore.Design. Projects using Central Package Management must declare PackageReference and PackageVersion items with matching names. For more information, visit https://aka.ms/nuget/cpm/gettingstarted",
+      "projectPath": "C:\\Users\\sally\\source\\repos\\NearbyCustomers\\CoreCodeCamp.csproj",
+      "filePath": "C:\\Users\\sally\\source\\repos\\NearbyCustomers\\CoreCodeCamp.csproj",
+      "targetGraphs": []
+    }
+  ]
+}

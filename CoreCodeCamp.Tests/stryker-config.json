@@ -1,0 +1,25 @@
+{
+  "stryker-config": {
+    "project": "CoreCodeCamp.csproj",
+    "reporters": ["html", "progress", "cleartext"],
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    },
+    "mutate": [
+      "!**/obj/**",
+      "!**/bin/**",
+      "!**/Migrations/**",
+      "!**/Data/Entities/**",
+      "!**/Data/CampContext.cs",
+      "!**/Data/CampContextFactory.cs",
+      "!**/Data/IDbContextFactory.cs",
+      "!**/Data/ICampRepository.cs",
+      "!**/Data/CampRepository.cs",
+      "!**/Program.cs",
+      "!**/WebApplicationExtensions.cs",
+      "Services/**/*.cs"
+    ]
+  }
+}

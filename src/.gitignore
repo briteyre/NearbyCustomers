@@ -1,0 +1,32 @@
+# Visual Studio
+.vs/
+
+# Build outputs
+**/bin/
+**/obj/
+
+# Test results
+TestResults/
+*.trx
+
+# User and IDE files
+*.user
+*.suo
+.vscode/
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Publish and artifacts
+publish/
+artifacts/
+
+# Secrets (local development)
+secrets.json
+
+# OS
+.DS_Store
+Thumbs.db
