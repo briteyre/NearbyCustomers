@@ -58,37 +58,45 @@ public class CampService(ICampRepository repository, ILogger<CampService> logger
 
     public async Task<Camp?> GetCampAsync(string city)
     {
-        _logger.LogInformation("Getting camp for {City}", city);
-        var key = GetCampKey(city);
-        var cached = await _cache.GetStringAsync(key).ConfigureAwait(false);
-        if (!string.IsNullOrEmpty(cached))
+        try
         {
-            try
+            _logger.LogInformation("Getting camp for {City}", city);
+            var key = GetCampKey(city);
+            var cached = await _cache.GetStringAsync(key).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(cached))
             {
-                var cachedCamp = JsonSerializer.Deserialize<Camp>(cached);
-                if (cachedCamp is not null)
+                try
                 {
-                    return cachedCamp;
+                    var cachedCamp = JsonSerializer.Deserialize<Camp>(cached);
+                    if (cachedCamp is not null)
+                    {
+                        return cachedCamp;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // data is invalid — reload from repository
                 }
             }
-            catch (JsonException)
+
+            var camp = await _repository.GetCampAsync(city);
+            if (camp is not null)
             {
-                // data is invalid — reload from repository
+                var json = JsonSerializer.Serialize(camp);
+                var options = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheSettings.CampMinutes)
+                };
+                await _cache.SetStringAsync(key, json, options).ConfigureAwait(false);
             }
-        }
 
-        var camp = await _repository.GetCampAsync(city);
-        if (camp is not null)
+            return camp;
+        }
+        catch (Exception ex)
         {
-            var json = JsonSerializer.Serialize(camp);
-            var options = new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheSettings.CampMinutes)
-            };
-            await _cache.SetStringAsync(key, json, options).ConfigureAwait(false);
+            _logger.LogError(ex, "Error retrieving camp for {City}", city);
+            return null;
         }
-
-        return camp;
     }
 
     public async Task<Camp> CreateCampAsync(CreateCampRequest request)
