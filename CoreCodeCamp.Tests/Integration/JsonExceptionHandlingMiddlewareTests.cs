@@ -30,7 +30,7 @@ public class JsonExceptionHandlingMiddlewareTests : IAsyncLifetime
         var invalidPayload = new
         {
             name = "Test Camp",
-            city = "Test City",
+            city = "Some City",
             eventDate = "", 
             length = 1
         };
