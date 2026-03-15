@@ -36,7 +36,7 @@ public class JsonExceptionHandlingMiddlewareTests : IAsyncLifetime
         };
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/values", invalidPayload);
+        var response = await _httpClient.PostAsJsonAsync("/api/camps", invalidPayload);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -67,7 +67,7 @@ public class JsonExceptionHandlingMiddlewareTests : IAsyncLifetime
         };
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/values", invalidPayload);
+        var response = await _httpClient.PostAsJsonAsync("/api/camps", invalidPayload);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -93,7 +93,7 @@ public class JsonExceptionHandlingMiddlewareTests : IAsyncLifetime
         };
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/values", validPayload);
+        var response = await _httpClient.PostAsJsonAsync("/api/camps", validPayload);
 
         // Assert 
         response.StatusCode.Should().NotBe(HttpStatusCode.BadRequest);
@@ -112,7 +112,7 @@ public class JsonExceptionHandlingMiddlewareTests : IAsyncLifetime
         };
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/values", invalidPayload);
+        var response = await _httpClient.PostAsJsonAsync("/api/camps", invalidPayload);
 
         // Assert
         var responseBody = JsonNode.Parse(await response.Content.ReadAsStringAsync());

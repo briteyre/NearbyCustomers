@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CoreCodeCamp.Tests.Integration;
 
+internal record CampSummary(int CampId, string Name, string City, DateTime EventDate, int Length);
+
 public class GetCampsIntegrationTests : IClassFixture<TestWebApplicationFactory>, IAsyncLifetime
 {
     private readonly TestWebApplicationFactory _factory;
@@ -60,12 +62,12 @@ public class GetCampsIntegrationTests : IClassFixture<TestWebApplicationFactory>
     public async Task Get_WithNoCamps_ShouldReturnEmptyArrayAsync()
     {
         // Act
-        var response = await _client.GetAsync("/api/values");
+        var response = await _client.GetAsync("/api/camps");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var camps = await response.Content.ReadFromJsonAsync<string[]>();
+        var camps = await response.Content.ReadFromJsonAsync<CampSummary[]>();
         camps.Should().NotBeNull();
         camps.Should().BeEmpty();
     }
@@ -92,19 +94,19 @@ public class GetCampsIntegrationTests : IClassFixture<TestWebApplicationFactory>
             LocationId = 1
         };
 
-        await _client.PostAsJsonAsync("/api/values", firstCampRequest);
-        await _client.PostAsJsonAsync("/api/values", secondCampRequest);
+        await _client.PostAsJsonAsync("/api/camps", firstCampRequest);
+        await _client.PostAsJsonAsync("/api/camps", secondCampRequest);
 
         // Act
-        var response = await _client.GetAsync("/api/values");
+        var response = await _client.GetAsync("/api/camps");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var camps = await response.Content.ReadFromJsonAsync<string[]>();
+        var camps = await response.Content.ReadFromJsonAsync<CampSummary[]>();
         camps.Should().NotBeNull();
         camps.Should().HaveCount(2);
-        camps.Should().Contain(firstCampRequest.Name);
-        camps.Should().Contain(secondCampRequest.Name);
+        camps.Should().Contain(c => c.Name == firstCampRequest.Name);
+        camps.Should().Contain(c => c.Name == secondCampRequest.Name);
     }
 }

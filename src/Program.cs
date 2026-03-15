@@ -103,32 +103,24 @@ public partial class Program
         app.UseAuthorization();
 
         // Minimal API Endpoints
-        app.MapGet("/api/values", async (ICampService campService) =>
-        {
-            var camps = await campService.GetAllCampsAsync();
-            return Results.Ok(camps.Select(c => c.Name));
-        })
-        .WithName("GetCamps")
-        .AllowAnonymous();
-
         app.MapGet("/api/camps", async (ICampService campService) =>
         {
             var camps = await campService.GetAllCampsAsync();
             return Results.Ok(camps.Select(c => new { c.CampId, c.Name, c.City, c.EventDate, c.Length }));
         })
-        .WithName("GetCampDetails")
+        .WithName("GetCamps")
         .AllowAnonymous();
 
-        app.MapPost("/api/values", async (CreateCampRequest request, ICampService campService) =>
+        app.MapPost("/api/camps", async (CreateCampRequest request, ICampService campService) =>
         {
             var camp = await campService.CreateCampAsync(request);
-            return Results.Created($"/api/values/{camp.City}", new { success = true });
+            return Results.Created($"/api/camps/{camp.City}", new { success = true });
         })
         .AddEndpointFilter(async (context, next) => await ValidationFilter<CreateCampRequest>(context, next))
         .WithName("CreateCamp")
         .AllowAnonymous();
 
-        app.MapPut("/api/values/{city}", async (string city, UpdateCampRequest request, ICampService campService) =>
+        app.MapPut("/api/camps/{city}", async (string city, UpdateCampRequest request, ICampService campService) =>
         {
             var result = await campService.UpdateCampAsync(city, request);
             if (result)
