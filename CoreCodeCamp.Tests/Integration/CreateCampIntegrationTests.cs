@@ -44,7 +44,7 @@ public class CreateCampIntegrationTests(TestWebApplicationFactory factory) : ICl
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/values", request);
+        var response = await _client.PostAsJsonAsync("/api/camps", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -73,17 +73,17 @@ public class CreateCampIntegrationTests(TestWebApplicationFactory factory) : ICl
         };
 
         // Act - Create the camp
-        var createResponse = await _client.PostAsJsonAsync("/api/values", request);
+        var createResponse = await _client.PostAsJsonAsync("/api/camps", request);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Act - Retrieve all camps
-        var getResponse = await _client.GetAsync("/api/values");
+        var getResponse = await _client.GetAsync("/api/camps");
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var camps = await getResponse.Content.ReadFromJsonAsync<string[]>();
+        var camps = await getResponse.Content.ReadFromJsonAsync<CampSummary[]>();
 
         // Assert
         camps.Should().NotBeNull();
-        camps.Should().Contain(request.Name);
+        camps.Should().Contain(c => c.Name == request.Name);
     }
 }

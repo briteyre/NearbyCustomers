@@ -48,7 +48,7 @@ public class UpdateCampIntegrationTests : IClassFixture<TestWebApplicationFactor
             Length = _faker.Random.Int(1, 5),
             LocationId = 1
         };
-        await _client.PostAsJsonAsync("/api/values", createRequest);
+        await _client.PostAsJsonAsync("/api/camps", createRequest);
 
         var updateRequest = new UpdateCampRequest
         {
@@ -58,7 +58,7 @@ public class UpdateCampIntegrationTests : IClassFixture<TestWebApplicationFactor
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/values/{createRequest.City}", updateRequest);
+        var response = await _client.PutAsJsonAsync($"/api/camps/{createRequest.City}", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -85,7 +85,7 @@ public class UpdateCampIntegrationTests : IClassFixture<TestWebApplicationFactor
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync("/api/values/NONEXISTENT", updateRequest);
+        var response = await _client.PutAsJsonAsync("/api/camps/NONEXISTENT", updateRequest);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

@@ -21,9 +21,9 @@ New files created:
 ### 3. **Converted to Minimal APIs**
 Updated `Program.cs` to use Minimal API endpoints:
 
-**GET** `/api/values` - Get all camps (returns array of camp names)
-**POST** `/api/values` - Create a new camp
-**PUT** `/api/values/{moniker}` - Update an existing camp
+**GET** `/api/camps` - Get all camps (returns array of camp details)
+**POST** `/api/camps` - Create a new camp
+**PUT** `/api/camps/{city}` - Update an existing camp
 
 ### 4. **Updated Integration Tests**
 Modified `CreateCampIntegrationTests.cs`:
