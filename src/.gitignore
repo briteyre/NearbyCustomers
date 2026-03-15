@@ -30,3 +30,13 @@ secrets.json
 # OS
 .DS_Store
 Thumbs.db
+# Aspire AppHost build artifacts
+CoreApiFundamentals.AppHost/bin/
+CoreApiFundamentals.AppHost/obj/
+
+# MCP / Aspire generated files
+.mcp.json
+
+# ServiceDefaults build artifacts
+CoreApiFundamentals.ServiceDefaults/bin/
+CoreApiFundamentals.ServiceDefaults/obj/

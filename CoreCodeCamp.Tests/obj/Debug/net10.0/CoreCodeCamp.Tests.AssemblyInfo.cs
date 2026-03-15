@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CoreCodeCamp.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fcb83b446b03cfaf5ee325ef324a2a859edcc3ce")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ad109017e52f43f799af8c188dacd1dd98a57e6")]
 [assembly: System.Reflection.AssemblyProductAttribute("CoreCodeCamp.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CoreCodeCamp.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

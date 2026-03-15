@@ -1,6 +1,10 @@
 using CoreCodeCamp.Data;
 using CoreCodeCamp.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
+using System.Threading;
+using System.Threading.Tasks;
 using Bogus;
 
 namespace CoreCodeCamp.Tests.Unit;
@@ -8,11 +12,42 @@ namespace CoreCodeCamp.Tests.Unit;
 public class CampServiceTests
 {
     private readonly Mock<ILogger<CampService>> _mockLogger = new();
-    private const string NonExistentMoniker = "NONEXISTENT";
+    private const string NonExistentCity = "NONEXISTENT";
 
     private CampService CreateService(Mock<ICampRepository> mockRepo)
     {
-        return new CampService(mockRepo.Object, _mockLogger.Object);
+        var cache = new TestDistributedCache();
+        var opts = Options.Create(new CoreCodeCamp.Services.CacheSettings());
+        return new CampService(mockRepo.Object, _mockLogger.Object, cache, opts);
+    }
+
+    private class TestDistributedCache : IDistributedCache
+    {
+        private readonly Dictionary<string, byte[]> _store = new();
+
+        public byte[] Get(string key) => _store.TryGetValue(key, out var v) ? v : null;
+
+        public Task<byte[]> GetAsync(string key, CancellationToken token = default) => Task.FromResult(Get(key));
+
+        public void Refresh(string key) { }
+
+        public Task RefreshAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+
+        public void Remove(string key) => _store.Remove(key);
+
+        public Task RemoveAsync(string key, CancellationToken token = default)
+        {
+            _store.Remove(key);
+            return Task.CompletedTask;
+        }
+
+        public void Set(string key, byte[] value, DistributedCacheEntryOptions options) => _store[key] = value;
+
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default)
+        {
+            _store[key] = value;
+            return Task.CompletedTask;
+        }
     }
 
     [Fact]
@@ -144,7 +179,7 @@ public class CampServiceTests
     {
         // Arrange
         var mockRepo = new Mock<ICampRepository>();
-        mockRepo.Setup(r => r.GetCampAsync(NonExistentMoniker, false)).ReturnsAsync((Camp?)null);
+        mockRepo.Setup(r => r.GetCampAsync(NonExistentCity, false)).ReturnsAsync((Camp?)null);
 
         var service = CreateService(mockRepo);
 
@@ -156,12 +191,12 @@ public class CampServiceTests
         };
 
         // Act
-        var result = await service.UpdateCampAsync(NonExistentMoniker, request);
+        var result = await service.UpdateCampAsync(NonExistentCity, request);
 
         // Assert
         result.Should().BeFalse();
 
-        mockRepo.Verify(r => r.GetCampAsync(NonExistentMoniker, false), Times.Once);
+        mockRepo.Verify(r => r.GetCampAsync(NonExistentCity, false), Times.Once);
         mockRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
@@ -192,7 +227,7 @@ public class CampServiceTests
     }
 
     [Fact]
-    public async Task GetCamp_WithExistingMoniker_ShouldReturnCampAsync()
+    public async Task GetCamp_WithExistingCity_ShouldReturnCampAsync()
     {
         // Arrange
         var camp = new Camp { CampId = 1, Name = "Test Camp", City = "TEST" };
@@ -214,21 +249,21 @@ public class CampServiceTests
     }
 
     [Fact]
-    public async Task GetCamp_WithNonExistentMoniker_ShouldReturnNullAsync()
+    public async Task GetCamp_WithNonExistentCity_ShouldReturnNullAsync()
     {
         // Arrange
         var mockRepo = new Mock<ICampRepository>();
-        mockRepo.Setup(r => r.GetCampAsync(NonExistent, false)).ReturnsAsync((Camp?)null);
+        mockRepo.Setup(r => r.GetCampAsync(NonExistentCity, false)).ReturnsAsync((Camp?)null);
 
         var service = CreateService(mockRepo);
 
         // Act
-        var result = await service.GetCampAsync(NonExistent);
+        var result = await service.GetCampAsync(NonExistentCity);
 
         // Assert
         result.Should().BeNull();
 
-        mockRepo.Verify(r => r.GetCampAsync(NonExistent, false), Times.Once);
+        mockRepo.Verify(r => r.GetCampAsync(NonExistentCity, false), Times.Once);
     }
 
 

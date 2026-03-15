@@ -62,7 +62,7 @@ namespace CoreCodeCamp.Data
             return await query.ToArrayAsync();
         }
 
-        public async Task<Camp> GetCampAsync(string moniker, bool includeTalks = false)
+        public async Task<Camp?> GetCampAsync(string city, bool includeTalks = false)
         {
             IQueryable<Camp> query = _context.Camps
                 .Include(c => c.Location);
@@ -74,12 +74,12 @@ namespace CoreCodeCamp.Data
             }
 
             // Query It
-            query = query.Where(c => c.City == moniker);
+            query = query.Where(c => c.City == city);
 
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<Talk[]> GetTalksByMonikerAsync(string moniker, bool includeSpeakers = false)
+        public async Task<Talk[]> GetTalksByCityAsync(string city, bool includeSpeakers = false)
         {
             IQueryable<Talk> query = _context.Talks;
 
@@ -91,13 +91,13 @@ namespace CoreCodeCamp.Data
 
             // Add Query
             query = query
-              .Where(t => t.Camp.City == moniker)
+              .Where(t => t.Camp.City == city)
               .OrderByDescending(t => t.Title);
 
             return await query.ToArrayAsync();
         }
 
-        public async Task<Talk> GetTalkByMonikerAsync(string moniker, int talkId, bool includeSpeakers = false)
+        public async Task<Talk?> GetTalkByCityAsync(string city, int talkId, bool includeSpeakers = false)
         {
             IQueryable<Talk> query = _context.Talks;
 
@@ -109,15 +109,15 @@ namespace CoreCodeCamp.Data
 
             // Add Query
             query = query
-              .Where(t => t.TalkId == talkId && t.Camp.City == moniker);
+              .Where(t => t.TalkId == talkId && t.Camp.City == city);
 
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<Speaker[]> GetSpeakersByMonikerAsync(string moniker)
+        public async Task<Speaker[]> GetSpeakersByCityAsync(string city)
         {
             IQueryable<Speaker> query = _context.Talks
-              .Where(t => t.Camp.City == moniker)
+              .Where(t => t.Camp.City == city)
               .Select(t => t.Speaker)
               .Where(s => s != null)
               .OrderBy(s => s.LastName)
@@ -135,7 +135,7 @@ namespace CoreCodeCamp.Data
         }
 
 
-        public async Task<Speaker> GetSpeakerAsync(int speakerId)
+        public async Task<Speaker?> GetSpeakerAsync(int speakerId)
         {
             var query = _context.Speakers
               .Where(t => t.SpeakerId == speakerId);

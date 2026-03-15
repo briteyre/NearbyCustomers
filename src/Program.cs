@@ -21,6 +21,14 @@ public partial class Program
             builder.AddSqlServerDbContext<CampContext>("CodeCamp");
         }
 
+        // For local/testing scenarios use the in-memory distributed cache. In production
+        // you can switch this to Redis by calling AddStackExchangeRedisCache with the
+        // Aspire-provided connection string (e.g. configuration key "cache:ConnectionString").
+        builder.Services.AddDistributedMemoryCache();
+
+        // Bind cache settings from configuration (section: "Cache")
+        builder.Services.Configure<CoreCodeCamp.Services.CacheSettings>(builder.Configuration.GetSection("Cache"));
+
         builder.Services.AddScoped<ICampRepository, CampRepository>();
         builder.Services.AddScoped<ICampService, CampService>();
 

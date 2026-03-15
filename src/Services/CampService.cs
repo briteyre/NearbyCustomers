@@ -1,20 +1,53 @@
 using CoreCodeCamp.Data;
-using System;
-using System.Linq;
+using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
+
 
 namespace CoreCodeCamp.Services;
 
-public class CampService(ICampRepository repository, ILogger<CampService> logger) : ICampService
+public class CampService(ICampRepository repository, ILogger<CampService> logger, IDistributedCache cache, IOptions<CacheSettings> cacheSettings) : ICampService
 {
     private readonly ICampRepository _repository = repository;
     private readonly ILogger<CampService> _logger = logger;
+    private readonly IDistributedCache _cache = cache;
+    private readonly CacheSettings _cacheSettings = cacheSettings?.Value ?? new CacheSettings();
+
+    private const string AllCampsKey = "Camps:All";
+    private static string GetCampKey(string city) => $"Camps:City:{city}";
 
     public async Task<Camp[]> GetAllCampsAsync()
     {
         try
         {
+            var cached = await _cache.GetStringAsync(AllCampsKey).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(cached))
+            {
+                try
+                {
+                    var cachedCamps = JsonSerializer.Deserialize<Camp[]>(cached);
+                    if (cachedCamps is not null)
+                    {
+                        return cachedCamps;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // data is invalid — reload from repository
+                }
+            }
+
             var camps = await _repository.GetAllCampsAsync();
-            return camps ?? Array.Empty<Camp>();
+            var result = camps ?? Array.Empty<Camp>();
+
+            var json = JsonSerializer.Serialize(result);
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheSettings.AllCampsMinutes)
+            };
+            await _cache.SetStringAsync(AllCampsKey, json, options).ConfigureAwait(false);
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -25,15 +58,51 @@ public class CampService(ICampRepository repository, ILogger<CampService> logger
 
     public async Task<Camp?> GetCampAsync(string city)
     {
-        _logger.LogInformation("Getting camp for {City}", city);
-        return await _repository.GetCampAsync(city);
+        try
+        {
+            _logger.LogInformation("Getting camp for {City}", city);
+            var key = GetCampKey(city);
+            var cached = await _cache.GetStringAsync(key).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(cached))
+            {
+                try
+                {
+                    var cachedCamp = JsonSerializer.Deserialize<Camp>(cached);
+                    if (cachedCamp is not null)
+                    {
+                        return cachedCamp;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // data is invalid — reload from repository
+                }
+            }
+
+            var camp = await _repository.GetCampAsync(city);
+            if (camp is not null)
+            {
+                var json = JsonSerializer.Serialize(camp);
+                var options = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheSettings.CampMinutes)
+                };
+                await _cache.SetStringAsync(key, json, options).ConfigureAwait(false);
+            }
+
+            return camp;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving camp for {City}", city);
+            return null;
+        }
     }
 
     public async Task<Camp> CreateCampAsync(CreateCampRequest request)
     {
         _logger.LogInformation("Creating camp {City}", request.City);
 
-        // If client doesn't provide a LocationId it will default to 1 (see CreateCampRequest)
         var location = await _repository.GetLocationByIdAsync(request.LocationId)
           ?? throw new ArgumentException("Location does not exist.");
 
@@ -43,7 +112,18 @@ public class CampService(ICampRepository repository, ILogger<CampService> logger
         _repository.Add(camp);
         await _repository.SaveChangesAsync();
 
-        _logger.LogInformation("Camp {City} created successfully", camp.City);
+        // Invalidate caches for camps
+        try
+        {
+            await _cache.RemoveAsync(AllCampsKey).ConfigureAwait(false);
+            await _cache.RemoveAsync(GetCampKey(camp.City)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Cache invalidation failed after creating camp {City}; continuing", camp.City);
+        }
+
+        _logger.LogInformation("Camp for city {City} created successfully", camp.City);
         return camp;
     }
 
@@ -60,7 +140,22 @@ public class CampService(ICampRepository repository, ILogger<CampService> logger
 
         CampServiceMapper.UpdateCamp(request, camp);
 
-        return await _repository.SaveChangesAsync();
+        var result = await _repository.SaveChangesAsync();
+        if (result)
+        {
+            // Invalidate caches for updated camp
+            try
+            {
+                await _cache.RemoveAsync(AllCampsKey).ConfigureAwait(false);
+                await _cache.RemoveAsync(GetCampKey(city)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Cache invalidation failed after updating camp {City}; continuing", city);
+            }
+        }
+
+        return result;
     }
 
     public async Task<bool> DeleteSpeakerByNameAsync(string firstName, string lastName)
