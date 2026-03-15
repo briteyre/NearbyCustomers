@@ -9,11 +9,11 @@
 
         // Camps
         Task<Camp[]> GetAllCampsAsync(bool includeTalks = false);
-        Task<Camp> GetCampAsync(string city, bool includeTalks = false);
+        Task<Camp?> GetCampAsync(string city, bool includeTalks = false);
         Task<Camp[]> GetAllCampsByEventDateAsync(DateTime dateTime, bool includeTalks = false);
 
         // Talks
-        Task<Talk> GetTalkByCityAsync(string city, int talkId, bool includeSpeakers = false);
+        Task<Talk?> GetTalkByCityAsync(string city, int talkId, bool includeSpeakers = false);
         Task<Talk[]> GetTalksByCityAsync(string city, bool includeSpeakers = false);
 
         // Speakers

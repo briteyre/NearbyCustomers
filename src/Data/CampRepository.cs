@@ -62,7 +62,7 @@ namespace CoreCodeCamp.Data
             return await query.ToArrayAsync();
         }
 
-        public async Task<Camp> GetCampAsync(string city, bool includeTalks = false)
+        public async Task<Camp?> GetCampAsync(string city, bool includeTalks = false)
         {
             IQueryable<Camp> query = _context.Camps
                 .Include(c => c.Location);
@@ -97,7 +97,7 @@ namespace CoreCodeCamp.Data
             return await query.ToArrayAsync();
         }
 
-        public async Task<Talk> GetTalkByCityAsync(string city, int talkId, bool includeSpeakers = false)
+        public async Task<Talk?> GetTalkByCityAsync(string city, int talkId, bool includeSpeakers = false)
         {
             IQueryable<Talk> query = _context.Talks;
 
@@ -135,7 +135,7 @@ namespace CoreCodeCamp.Data
         }
 
 
-        public async Task<Speaker> GetSpeakerAsync(int speakerId)
+        public async Task<Speaker?> GetSpeakerAsync(int speakerId)
         {
             var query = _context.Speakers
               .Where(t => t.SpeakerId == speakerId);
