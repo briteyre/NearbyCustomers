@@ -1,1 +1,43 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$primary-palette: mat.m2-define-palette(mat.$m2-blue-palette, 700, 400, 900);
+$accent-palette: mat.m2-define-palette(mat.$m2-light-blue-palette, 400);
+$warn-palette: mat.m2-define-palette(mat.$m2-red-palette);
+
+$theme: mat.m2-define-light-theme((
+  color: (
+    primary: $primary-palette,
+    accent: $accent-palette,
+    warn: $warn-palette,
+  ),
+));
+
+@include mat.all-component-themes($theme);
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f5f9ff;
+  color: #212121;
+}
+
+html, body {
+  height: 100%;
+}
+
+.success-snack {
+  background: #2e7d32 !important;
+  color: white !important;
+}
+
+.error-snack {
+  background: #c62828 !important;
+  color: white !important;
+}
