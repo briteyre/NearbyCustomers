@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace CoreCodeCamp.Data
+﻿namespace CoreCodeCamp.Data
 {
     public interface ICampRepository
     {
@@ -13,15 +9,15 @@ namespace CoreCodeCamp.Data
 
         // Camps
         Task<Camp[]> GetAllCampsAsync(bool includeTalks = false);
-        Task<Camp> GetCampAsync(string moniker, bool includeTalks = false);
+        Task<Camp> GetCampAsync(string city, bool includeTalks = false);
         Task<Camp[]> GetAllCampsByEventDateAsync(DateTime dateTime, bool includeTalks = false);
 
         // Talks
-        Task<Talk> GetTalkByMonikerAsync(string moniker, int talkId, bool includeSpeakers = false);
-        Task<Talk[]> GetTalksByMonikerAsync(string moniker, bool includeSpeakers = false);
+        Task<Talk> GetTalkByCityAsync(string city, int talkId, bool includeSpeakers = false);
+        Task<Talk[]> GetTalksByCityAsync(string city, bool includeSpeakers = false);
 
         // Speakers
-        Task<Speaker[]> GetSpeakersByMonikerAsync(string moniker);
+        Task<Speaker[]> GetSpeakersByCityAsync(string city);
         Task<Speaker?> GetSpeakerAsync(int speakerId);
         Task<Speaker[]> GetAllSpeakersAsync();
 

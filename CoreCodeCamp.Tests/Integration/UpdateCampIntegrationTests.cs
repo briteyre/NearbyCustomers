@@ -74,7 +74,7 @@ public class UpdateCampIntegrationTests : IClassFixture<TestWebApplicationFactor
     }
 
     [Fact]
-    public async Task Put_WithNonExistentMoniker_ShouldReturn404Async()
+    public async Task Put_WithNonExistentCity_ShouldReturn404Async()
     {
         // Arrange
         var updateRequest = new UpdateCampRequest
