@@ -113,8 +113,15 @@ public class CampService(ICampRepository repository, ILogger<CampService> logger
         await _repository.SaveChangesAsync();
 
         // Invalidate caches for camps
-        await _cache.RemoveAsync(AllCampsKey).ConfigureAwait(false);
-        await _cache.RemoveAsync(GetCampKey(camp.City)).ConfigureAwait(false);
+        try
+        {
+            await _cache.RemoveAsync(AllCampsKey).ConfigureAwait(false);
+            await _cache.RemoveAsync(GetCampKey(camp.City)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Cache invalidation failed after creating camp {City}; continuing", camp.City);
+        }
 
         _logger.LogInformation("Camp for city {City} created successfully", camp.City);
         return camp;
@@ -137,8 +144,15 @@ public class CampService(ICampRepository repository, ILogger<CampService> logger
         if (result)
         {
             // Invalidate caches for updated camp
-            await _cache.RemoveAsync(AllCampsKey).ConfigureAwait(false);
-            await _cache.RemoveAsync(GetCampKey(city)).ConfigureAwait(false);
+            try
+            {
+                await _cache.RemoveAsync(AllCampsKey).ConfigureAwait(false);
+                await _cache.RemoveAsync(GetCampKey(city)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Cache invalidation failed after updating camp {City}; continuing", city);
+            }
         }
 
         return result;
