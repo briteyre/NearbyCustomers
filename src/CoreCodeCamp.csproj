@@ -36,7 +36,6 @@
 
   <ItemGroup>
     <Folder Include="CoreCodeCamp.Tests\Integration\" />
-    <Folder Include="src\Controllers\" />
   </ItemGroup>
 
 </Project>
