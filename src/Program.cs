@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using System.Linq;
+using Polly;
+using Polly.Timeout;
 
 public partial class Program
 {
@@ -21,9 +22,6 @@ public partial class Program
             builder.AddSqlServerDbContext<CampContext>("CodeCamp");
         }
 
-        // For local/testing scenarios use the in-memory distributed cache. In production
-        // you can switch this to Redis by calling AddStackExchangeRedisCache with the
-        // Aspire-provided connection string (e.g. configuration key "cache:ConnectionString").
         builder.Services.AddDistributedMemoryCache();
 
         // Bind cache settings from configuration (section: "Cache")
@@ -78,6 +76,25 @@ public partial class Program
 
         builder.Services.AddSwaggerDocumentation();
 
+        // Configure Ollama settings and service
+        var ollamaSettings = new OllamaSettings();
+        builder.Configuration.GetSection("Ollama").Bind(ollamaSettings);
+        builder.Services.AddSingleton(ollamaSettings);
+        // Create a per-client Polly timeout policy (60s) to override shorter defaults for Ollama
+        var ollamaTimeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(
+            TimeSpan.FromSeconds(60), TimeoutStrategy.Pessimistic);
+
+        builder.Services.AddHttpClient<IOllamaService, OllamaService>(c =>
+        {
+            c.BaseAddress = new Uri(ollamaSettings.BaseUrl);
+            // increase HttpClient timeout for Ollama requests
+            c.Timeout = TimeSpan.FromSeconds(60);
+        })
+        .AddPolicyHandler(ollamaTimeoutPolicy);
+
+        // Register the simple in-memory knowledge base for local experiments
+        builder.Services.AddSingleton<IKnowledgeBase, InMemoryKnowledgeBase>();
+
         var app = builder.Build();
 
         await app.EnsureDatabaseAsync();
@@ -91,6 +108,9 @@ public partial class Program
 
         // Add JSON exception handling middleware early in the pipeline
         app.UseMiddleware<CoreCodeCamp.Infrastructure.JsonExceptionHandlingMiddleware>();
+
+        // Add Chaos middleware to inject latency/errors when enabled in configuration
+        app.UseMiddleware<CoreCodeCamp.Infrastructure.ChaosMiddleware>();
 
         // Serve minimal frontend (SPA) from wwwroot
         app.UseDefaultFiles();
@@ -161,6 +181,66 @@ public partial class Program
             return Results.Ok(speakers);
         })
         .WithName("GetSpeakers")
+        .AllowAnonymous();
+
+        app.MapPost("/api/llm/chat", async (ChatRequest request, IOllamaService ollama) =>
+        {
+            var reply = await ollama.AskAsync(request.Message);
+            return Results.Ok(new { reply });
+        })
+        .WithName("Chat")
+        .AllowAnonymous();
+
+        // Simple admin endpoints to manage the in-memory knowledge base used for experiments.
+        app.MapPost("/api/llm/docs", async (KnowledgeDocument doc, IKnowledgeBase kb) =>
+        {
+            if (string.IsNullOrWhiteSpace(doc?.Id)) return Results.BadRequest(new { error = "id required" });
+            await kb.AddDocumentAsync(doc.Id, doc.Text ?? string.Empty);
+            return Results.Created($"/api/llm/docs/{doc.Id}", doc);
+        })
+        .WithName("AddKnowledgeDocument")
+        .AllowAnonymous();
+
+        app.MapGet("/api/llm/docs", async (IKnowledgeBase kb) =>
+        {
+            var docs = await kb.ListDocumentsAsync();
+            return Results.Ok(docs);
+        })
+        .WithName("ListKnowledgeDocuments")
+        .AllowAnonymous();
+
+        // Upload a document file (text/markdown/json/html) and add its text to the knowledge base.
+        app.MapPost("/api/llm/docs/upload", async (HttpContext ctx, IKnowledgeBase kb) =>
+        {
+            var request = ctx.Request;
+            if (!request.HasFormContentType) return Results.BadRequest(new { error = "Expected multipart/form-data" });
+
+            var form = await request.ReadFormAsync();
+            var file = form.Files.FirstOrDefault();
+            if (file is null) return Results.BadRequest(new { error = "file required" });
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            // Only support simple text-based files for this demo
+            var allowed = new[] { ".txt", ".md", ".json", ".html", ".htm" };
+            if (!allowed.Contains(ext))
+            {
+                return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);
+            }
+
+            string content;
+            using (var sr = new StreamReader(file.OpenReadStream()))
+            {
+                content = await sr.ReadToEndAsync();
+            }
+
+            var id = Path.GetFileNameWithoutExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(id)) id = Guid.NewGuid().ToString("N");
+
+            await kb.AddDocumentAsync(id, content);
+
+            return Results.Created($"/api/llm/docs/{id}", new KnowledgeDocument(id, content));
+        })
+        .WithName("UploadKnowledgeDocument")
         .AllowAnonymous();
 
         app.MapDelete("/api/speakers/{firstName}/{lastName}", async (string firstName, string lastName, ICampService campService) =>

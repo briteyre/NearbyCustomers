@@ -7,6 +7,9 @@ using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Polly;
+using Polly.Timeout;
+using System.Net.Http;
 
 namespace Microsoft.Extensions.Hosting
 {
