@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <mat-toolbar class="app-toolbar" color="primary">
       <mat-icon class="app-logo">emoji_events</mat-icon>
-      <span class="app-name">NearbyCustomers</span>
+      <span class="app-name">Camps</span>
       <span class="spacer"></span>
       <a mat-button routerLink="/calendar" routerLinkActive="active-link">
         <mat-icon>calendar_today</mat-icon>
@@ -20,6 +20,10 @@ import { MatIconModule } from '@angular/material/icon';
       <a mat-button routerLink="/speakers" routerLinkActive="active-link">
         <mat-icon>people</mat-icon>
         Speakers
+      </a>
+      <a mat-button routerLink="/chat" routerLinkActive="active-link">
+        <mat-icon>chat</mat-icon>
+        Chat
       </a>
     </mat-toolbar>
     <main class="app-content">
@@ -71,5 +75,5 @@ import { MatIconModule } from '@angular/material/icon';
   `]
 })
 export class AppComponent {
-  title = 'NearbyCustomers';
+  title = 'Camps';
 }
