@@ -48,4 +48,9 @@ export class CampService {
   getSpeakers(): Observable<Speaker[]> {
     return this.http.get<Speaker[]>(`${this.apiBase}/speakers`);
   }
+
+  deleteSpeaker(firstName: string, lastName: string): Observable<{ success: boolean }> {
+    const url = `${this.apiBase}/speakers/${encodeURIComponent(firstName)}/${encodeURIComponent(lastName)}`;
+    return this.http.delete<{ success: boolean }>(url);
+  }
 }

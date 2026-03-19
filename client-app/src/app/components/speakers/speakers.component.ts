@@ -5,6 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CampService, Speaker } from '../../services/camp.service';
 
 @Component({
@@ -17,6 +19,8 @@ import { CampService, Speaker } from '../../services/camp.service';
     MatProgressSpinnerModule,
     MatChipsModule,
     MatTooltipModule,
+    MatButtonModule,
+    MatSnackBarModule,
   ],
   template: `
     <div class="speakers-container">
@@ -65,6 +69,9 @@ import { CampService, Speaker } from '../../services/camp.service';
                  target="_blank" mat-icon-button matTooltip="Blog">
                 <mat-icon>article</mat-icon>
               </a>
+              <button mat-icon-button color="warn" (click)="onDeleteSpeaker(speaker)">
+                <mat-icon>delete</mat-icon>
+              </button>
             </div>
           </mat-card-content>
         </mat-card>
@@ -193,7 +200,7 @@ export class SpeakersComponent implements OnInit {
   speakers: Speaker[] = [];
   loading = false;
 
-  constructor(private campService: CampService) {}
+  constructor(private campService: CampService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loading = true;
@@ -205,6 +212,23 @@ export class SpeakersComponent implements OnInit {
       error: () => {
         this.loading = false;
       }
+    });
+  }
+
+  onDeleteSpeaker(speaker: Speaker) {
+    const ok = confirm(`Delete speaker ${speaker.firstName} ${speaker.lastName}?`);
+    if (!ok) return;
+
+    this.campService.deleteSpeaker(speaker.firstName, speaker.lastName).subscribe({
+      next: (res) => {
+        if (res?.success) {
+          this.speakers = this.speakers.filter(s => s.speakerId !== speaker.speakerId);
+          this.snackBar.open('Speaker deleted', undefined, { duration: 3000 });
+        } else {
+          this.snackBar.open('Failed to delete speaker', undefined, { duration: 3000 });
+        }
+      },
+      error: () => this.snackBar.open('Failed to delete speaker', undefined, { duration: 3000 })
     });
   }
 }
