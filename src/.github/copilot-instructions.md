@@ -3,6 +3,7 @@
 ## Project Guidelines
 - Do not automatically create markdown documentation files, README files, or helper scripts unless explicitly requested. Only make the specific code changes asked for.
 - Prefer warning fixes without adding new methods; keep changes minimal and in-place.
+- Do not automatically perform git commits or pushes; only commit or push when explicitly requested.
 
 ## Code Style Guidelines
 - Use primary constructors for dependency injection, but capture parameters into `readonly` fields to preserve immutability. For example:

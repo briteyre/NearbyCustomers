@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatIconModule } from '@angular/material/icon';
 import { CreateCampRequest } from '../../services/camp.service';
 
 @Component({
@@ -21,6 +22,7 @@ import { CreateCampRequest } from '../../services/camp.service';
     MatButtonModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatIconModule,
   ],
   template: `
     <h2 mat-dialog-title>Create New Camp</h2>

@@ -7,7 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -28,6 +28,7 @@ import { CreateCampDialogComponent } from '../create-camp-dialog/create-camp-dia
     MatProgressSpinnerModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatSnackBarModule,
