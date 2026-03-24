@@ -29,6 +29,17 @@ export interface Speaker {
   gitHub?: string;
 }
 
+export interface CreateSpeakerRequest {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  company?: string;
+  companyUrl?: string;
+  blogUrl?: string;
+  twitter?: string;
+  gitHub?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -47,6 +58,10 @@ export class CampService {
 
   getSpeakers(): Observable<Speaker[]> {
     return this.http.get<Speaker[]>(`${this.apiBase}/speakers`);
+  }
+
+  createSpeaker(request: CreateSpeakerRequest): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiBase}/speakers`, request);
   }
 
   deleteSpeaker(firstName: string, lastName: string): Observable<{ success: boolean }> {

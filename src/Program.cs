@@ -1,12 +1,14 @@
 ﻿using CoreCodeCamp;
 using CoreCodeCamp.Data;
 using CoreCodeCamp.Services;
+using CoreCodeCamp.Services.Plugins;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Polly;
 using Polly.Timeout;
+using Microsoft.SemanticKernel;
 
 public partial class Program
 {
@@ -24,8 +26,7 @@ public partial class Program
 
         builder.Services.AddDistributedMemoryCache();
 
-        // Bind cache settings from configuration (section: "Cache")
-        builder.Services.Configure<CoreCodeCamp.Services.CacheSettings>(builder.Configuration.GetSection("Cache"));
+        builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("Cache"));
 
         builder.Services.AddScoped<ICampRepository, CampRepository>();
         builder.Services.AddScoped<ICampService, CampService>();
@@ -80,7 +81,6 @@ public partial class Program
         var ollamaSettings = new OllamaSettings();
         builder.Configuration.GetSection("Ollama").Bind(ollamaSettings);
         builder.Services.AddSingleton(ollamaSettings);
-        // Create a per-client Polly timeout policy (60s) to override shorter defaults for Ollama
         var ollamaTimeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(
             TimeSpan.FromSeconds(60), TimeoutStrategy.Pessimistic);
 
@@ -92,8 +92,32 @@ public partial class Program
         })
         .AddPolicyHandler(ollamaTimeoutPolicy);
 
-        // Register the simple in-memory knowledge base for local experiments
         builder.Services.AddSingleton<IKnowledgeBase, InMemoryKnowledgeBase>();
+
+        // Register the KnowledgeBase plugin in DI so it (and its IKnowledgeBase dependency) can be resolved
+        builder.Services.AddSingleton<KnowledgeBasePlugin>();
+
+        // Register the Speaker Matcher plugin as scoped (it depends on scoped ICampRepository)
+        builder.Services.AddScoped<SpeakerMatcherPlugin>();
+
+        // Register Semantic Kernel with Ollama (OpenAI-compatible endpoint) and SpeakerMatcherPlugin
+#pragma warning disable SKEXP0010
+        builder.Services.AddScoped<Kernel>(sp =>
+        {
+            var ollamaConfig = sp.GetRequiredService<OllamaSettings>();
+            var kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder.AddOpenAIChatCompletion(
+                modelId: ollamaConfig.Model,
+                endpoint: new Uri($"{ollamaConfig.BaseUrl}"),
+                apiKey: "ollama");
+            var kernel = kernelBuilder.Build();
+            kernel.ImportPluginFromObject(sp.GetRequiredService<SpeakerMatcherPlugin>(), "SpeakerMatcher");
+            return kernel;
+        });
+#pragma warning restore SKEXP0010
+
+        // Register SK-powered chat service as scoped (it depends on scoped Kernel)
+        builder.Services.AddScoped<ISemanticKernelChatService, SemanticKernelChatService>();
 
         var app = builder.Build();
 
@@ -106,13 +130,11 @@ public partial class Program
 
         app.UseCors("AllowAll");
 
-        // Add JSON exception handling middleware early in the pipeline
         app.UseMiddleware<CoreCodeCamp.Infrastructure.JsonExceptionHandlingMiddleware>();
 
         // Add Chaos middleware to inject latency/errors when enabled in configuration
         app.UseMiddleware<CoreCodeCamp.Infrastructure.ChaosMiddleware>();
 
-        // Serve minimal frontend (SPA) from wwwroot
         app.UseDefaultFiles();
         app.UseStaticFiles();
         app.MapFallbackToFile("index.html");
@@ -183,12 +205,20 @@ public partial class Program
         .WithName("GetSpeakers")
         .AllowAnonymous();
 
-        app.MapPost("/api/llm/chat", async (ChatRequest request, IOllamaService ollama) =>
+        app.MapPost("/api/llm/chat", async (ChatRequest request, ISemanticKernelChatService skChat) =>
         {
-            var reply = await ollama.AskAsync(request.Message);
+            var reply = await skChat.ChatAsync(request.Message);
             return Results.Ok(new { reply });
         })
         .WithName("Chat")
+        .AllowAnonymous();
+
+        app.MapPost("/api/llm/sk-chat", async (ChatRequest request, ISemanticKernelChatService skChat) =>
+        {
+            var reply = await skChat.ChatAsync(request.Message);
+            return Results.Ok(new { reply });
+        })
+        .WithName("SkChat")
         .AllowAnonymous();
 
         // Simple admin endpoints to manage the in-memory knowledge base used for experiments.
@@ -220,8 +250,7 @@ public partial class Program
             if (file is null) return Results.BadRequest(new { error = "file required" });
 
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            // Only support simple text-based files for this demo
-            var allowed = new[] { ".txt", ".md", ".json", ".html", ".htm" };
+            var allowed = new[] { ".txt", ".md", ".json", ".html", ".htm", ".pdf" };
             if (!allowed.Contains(ext))
             {
                 return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);

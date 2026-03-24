@@ -6,8 +6,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { CampService, Speaker } from '../../services/camp.service';
+import { CampService, CreateSpeakerRequest, Speaker } from '../../services/camp.service';
+import { CreateSpeakerDialogComponent } from '../create-speaker-dialog/create-speaker-dialog.component';
 
 @Component({
   selector: 'app-speakers',
@@ -20,6 +22,7 @@ import { CampService, Speaker } from '../../services/camp.service';
     MatChipsModule,
     MatTooltipModule,
     MatButtonModule,
+    MatDialogModule,
     MatSnackBarModule,
   ],
   template: `
@@ -29,7 +32,13 @@ import { CampService, Speaker } from '../../services/camp.service';
           <mat-icon>people</mat-icon>
           Speakers
         </h1>
-        <span class="speaker-count" *ngIf="!loading">{{ speakers.length }} speaker(s)</span>
+        <div class="header-actions">
+          <span class="speaker-count" *ngIf="!loading">{{ speakers.length }} speaker(s)</span>
+          <button mat-raised-button color="primary" class="create-btn" (click)="openCreateSpeaker()">
+            <mat-icon>person_add</mat-icon>
+            Add Speaker
+          </button>
+        </div>
       </div>
 
       <div *ngIf="loading" class="loading-spinner">
@@ -90,6 +99,17 @@ import { CampService, Speaker } from '../../services/camp.service';
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .create-btn {
+      font-size: 15px;
+      padding: 8px 16px;
     }
 
     .page-title {
@@ -194,15 +214,36 @@ import { CampService, Speaker } from '../../services/camp.service';
     .speaker-links a {
       color: #1976d2;
     }
+
+    @media (max-width: 768px) {
+      .speakers-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
   `]
 })
 export class SpeakersComponent implements OnInit {
   speakers: Speaker[] = [];
   loading = false;
 
-  constructor(private campService: CampService, private snackBar: MatSnackBar) {}
+  constructor(
+    private campService: CampService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+  ) {}
 
   ngOnInit(): void {
+    this.loadSpeakers();
+  }
+
+  loadSpeakers(): void {
     this.loading = true;
     this.campService.getSpeakers().subscribe({
       next: (speakers) => {
@@ -215,9 +256,38 @@ export class SpeakersComponent implements OnInit {
     });
   }
 
-  onDeleteSpeaker(speaker: Speaker) {
+  openCreateSpeaker(): void {
+    const dialogRef = this.dialog.open(CreateSpeakerDialogComponent, {
+      width: '500px',
+      disableClose: false,
+    });
+
+    dialogRef.afterClosed().subscribe((result: CreateSpeakerRequest | undefined) => {
+      if (!result) {
+        return;
+      }
+
+      this.campService.createSpeaker(result).subscribe({
+        next: () => {
+          this.snackBar.open('Speaker created successfully!', 'Close', {
+            duration: 3000,
+          });
+          this.loadSpeakers();
+        },
+        error: () => {
+          this.snackBar.open('Failed to create speaker. Please try again.', 'Close', {
+            duration: 4000,
+          });
+        }
+      });
+    });
+  }
+
+  onDeleteSpeaker(speaker: Speaker): void {
     const ok = confirm(`Delete speaker ${speaker.firstName} ${speaker.lastName}?`);
-    if (!ok) return;
+    if (!ok) {
+      return;
+    }
 
     this.campService.deleteSpeaker(speaker.firstName, speaker.lastName).subscribe({
       next: (res) => {

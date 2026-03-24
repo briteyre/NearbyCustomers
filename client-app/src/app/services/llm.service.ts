@@ -18,4 +18,9 @@ export class LlmService {
   chat(message: string): Observable<any> {
     return this.http.post<any>(`${this.apiBase}/llm/chat`, { message });
   }
+
+  // Semantic Kernel chat endpoint
+  skChat(message: string): Observable<any> {
+    return this.http.post<any>(`${this.apiBase}/llm/sk-chat`, { message });
+  }
 }

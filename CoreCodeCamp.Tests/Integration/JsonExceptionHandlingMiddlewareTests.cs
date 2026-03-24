@@ -5,22 +5,21 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace CoreCodeCamp.Tests.Integration;
 
-public class JsonExceptionHandlingMiddlewareTests : IAsyncLifetime
+public class JsonExceptionHandlingMiddlewareTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>, IAsyncLifetime
 {
+    private readonly TestWebApplicationFactory _factory = factory;
     private HttpClient _httpClient = null!;
-    private WebApplicationFactory<Program> _factory = null!;
 
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
-        _factory = new WebApplicationFactory<Program>();
         _httpClient = _factory.CreateClient();
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         _httpClient.Dispose();
-        await _factory.DisposeAsync();
+        return Task.CompletedTask;
     }
 
     [Fact]

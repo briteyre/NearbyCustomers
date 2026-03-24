@@ -1,63 +1,26 @@
 using System.Linq;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json.Serialization;
 
 namespace CoreCodeCamp.Services;
 
-public class OllamaService(HttpClient http, OllamaSettings settings, IKnowledgeBase? kb = null) : IOllamaService
+public class OllamaService(HttpClient http, OllamaSettings settings) : IOllamaService
 {
     private readonly HttpClient _http = http;
     private readonly OllamaSettings _settings = settings;
-    private readonly IKnowledgeBase? _kb = kb;
 
     public async Task<string> AskAsync(string prompt, string? model = null)
     {
-        var context = new StringBuilder();
-        if (_kb is not null)
-        {
-            var docs = await _kb.RetrieveRelevantAsync(prompt, 2);
-            var docList = docs
-                .Where(d => !string.IsNullOrWhiteSpace(d))
-                .Select(d => d.Length > 700 ? d[..700] : d)
-                .ToList();
-
-            if (docList.Any())
-            {
-                context.AppendLine("CONTEXT:");
-                context.AppendLine();
-
-                for (int i = 0; i < docList.Count; i++)
-                {
-                    context.AppendLine($"[{i + 1}] {docList[i]}");
-                    context.AppendLine();
-                    context.AppendLine("---");
-                    context.AppendLine();
-                }
-
-                context.AppendLine("INSTRUCTION: Use the context above as the primary source. If the context is incomplete, you may use your general knowledge. Clearly indicate when part of your answer comes from general knowledge rather than the provided context.");
-                context.AppendLine();
-            }
-        }
-
         var modelName = string.IsNullOrWhiteSpace(model) ? _settings.Model : model;
         if (string.IsNullOrWhiteSpace(modelName)) modelName = "minimax-m2.5:cloud";
 
-        var fullPrompt = context.Length > 0 ? $"{context}{prompt}" : prompt;
+        var fullPrompt = prompt;
 
         var req = new OllamaRequest
         {
             Model = modelName,
             Prompt = fullPrompt,
-            Stream = false,
-            Options = new OllamaOptions
-            {
-                //NumPredict = 228,
-                //Temperature = 0.1,
-                //TopP = 0.8,
-                //TopK = 20,
-                //NumCtx = 1024
-            }
+            Stream = false
         };
 
         var resp = await _http.PostAsJsonAsync("/api/generate", req);

@@ -21,8 +21,17 @@ public class InMemoryKnowledgeBase : IKnowledgeBase
             return Task.FromResult(_docs.Take(k).Select(d => d.Text) as IEnumerable<string>);
         }
 
+        var stopWords = new HashSet<string> { "who", "is", "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "with", "by", "this", "that", "these", "those", "can", "you", "me", "my", "your", "tell", "more", "about" };
         var terms = query.ToLowerInvariant()
-            .Split(new[] { ' ', '\t', '\r', '\n', ',', '.', ';', ':' }, StringSplitOptions.RemoveEmptyEntries);
+            .Split(new[] { ' ', '\t', '\r', '\n', ',', '.', ';', ':', '?', '!', '(', ')', '[', ']', '\"', '\'' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(t => !stopWords.Contains(t))
+            .ToList();
+
+        if (!terms.Any())
+        {
+            // If only stop words or punctuation were in the query, fall back to literal query search
+            terms = new List<string> { query.ToLowerInvariant() };
+        }
 
         var scored = _docs
             .Select(d =>
@@ -37,9 +46,16 @@ public class InMemoryKnowledgeBase : IKnowledgeBase
             .Select(x => x.Text)
             .ToList();
 
-        if (!scored.Any()) scored = _docs.Take(k).Select(d => d.Text).ToList();
+        if (!scored.Any())
+        {
+            scored = _docs
+                .OrderByDescending(d => d.Id)
+                .Take(k)
+                .Select(d => d.Text)
+                .ToList();
+        }
 
-        return Task.FromResult(scored as IEnumerable<string>);
+        return Task.FromResult(scored.AsEnumerable());
     }
 
     public Task<IEnumerable<KnowledgeDocument>> ListDocumentsAsync()
